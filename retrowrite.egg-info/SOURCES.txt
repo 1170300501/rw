@@ -1,0 +1,9 @@
+LICENSE
+README.md
+setup.py
+retrowrite.egg-info/PKG-INFO
+retrowrite.egg-info/SOURCES.txt
+retrowrite.egg-info/dependency_links.txt
+retrowrite.egg-info/entry_points.txt
+retrowrite.egg-info/requires.txt
+retrowrite.egg-info/top_level.txt
