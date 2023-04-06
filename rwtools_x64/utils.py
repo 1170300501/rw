@@ -81,7 +81,9 @@ def _get_subreg8h(regname):
 
 
 def has_reg(op_str, reg):
-    if op_str.find(reg) != -1:
+    if reg.startswith("xmm"):  # 浮点寄存器额外处理
+        return reg if op_str.find(reg) != -1 else ""
+    elif op_str.find(reg) != -1:
         return reg
     elif op_str.find(_get_subreg32(reg)) != -1:
         return _get_subreg32(reg)
