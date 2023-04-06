@@ -179,8 +179,10 @@ def handle_get_operands(inst_op_str):
     if l_loc != -1:
         if "," in inst_op_str[:l_loc]:  # 说明op2有()
             operands = [op.strip() for op in inst_op_str.split(",", 1)]
-        else:
+        elif "," in inst_op_str[r_loc+1:]:
             operands = list(reversed([op[::-1].strip() for op in inst_op_str[::-1].split(",", 1)]))
+        else:  # 只有一个内存操作数
+            operands = [inst_op_str]
     else:
         operands = [op.strip() for op in inst_op_str.split(",")]
 
