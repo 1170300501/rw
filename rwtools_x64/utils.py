@@ -45,6 +45,10 @@ for reg in amd64.register_list:
             regmap[reg.name][0][32] = "ebp"
             regmap[reg.name][0][16] = "bp"
             regmap[reg.name][0][8] = "bpl"
+        if reg.name == "rsp":
+            regmap[reg.name][0][32] = "esp"
+            regmap[reg.name][0][16] = "sp"
+            regmap[reg.name][0][8] = "spl"
 
             regindex[regmap[reg.name][0][32]] = (reg.name, 0, 32)
             regindex[regmap[reg.name][0][16]] = (reg.name, 0, 16)

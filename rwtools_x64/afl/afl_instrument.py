@@ -196,7 +196,7 @@ class AFL_Instrument:
         def spread(s_op, t_flag):
             # 污点传播
             if t_flag:
-                if get_op_type(s_op) == "r" and not has_segment_reg(s_op) and regindex[s_op[1:]][0] not in taint_regs[l_idx]:
+                if get_op_type(s_op) == "r" and not has_reg(s_op, "rsp") and not has_segment_reg(s_op) and regindex[s_op[1:]][0] not in taint_regs[l_idx]:
                     taint_regs[l_idx].append(regindex[s_op[1:]][0])
                 elif get_op_type(s_op) == "m":
                     taint_mmrs.add(s_op)
