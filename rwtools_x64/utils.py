@@ -58,8 +58,16 @@ for reg in amd64.register_list:
         regindex[reg.name] = (reg.name, 0, 64)
 
         # 浮点寄存器
-        for j in range(16):
-            xmm_name = "xmm{}".format(j)
+        for j in range(8):
+            st_name = "st({})".format(j)
+            regmap[st_name][0][64] = st_name
+            regindex[st_name] = (st_name, 0, 64)
+
+            xmm_name = "xmm{}".format(j * 2)
+            regmap[xmm_name][0][64] = xmm_name
+            regindex[xmm_name] = (xmm_name, 0, 64)
+
+            xmm_name = "xmm{}".format(j * 2 + 1)
             regmap[xmm_name][0][64] = xmm_name
             regindex[xmm_name] = (xmm_name, 0, 64)
 
@@ -81,7 +89,7 @@ def _get_subreg8h(regname):
 
 
 def has_reg(op_str, reg):
-    if reg.startswith("xmm"):  # 浮点寄存器额外处理
+    if reg.startswith("xmm") or reg.startswith("st"):  # 浮点寄存器额外处理
         return reg if op_str.find(reg) != -1 else ""
     elif op_str.find(reg) != -1:
         return reg
