@@ -57,20 +57,21 @@ for reg in amd64.register_list:
         regmap[reg.name][0][64] = reg.name
         regindex[reg.name] = (reg.name, 0, 64)
 
-        # 浮点寄存器
-        for j in range(8):
-            st_name = "st({})".format(j)
-            regmap[st_name][0][64] = st_name
-            regindex[st_name] = (st_name, 0, 64)
+# 浮点寄存器
+for j in range(8):
+    st_name = "st({})".format(j)
+    regmap[st_name][0][64] = st_name
+    regindex[st_name] = (st_name, 0, 64)
 
-            xmm_name = "xmm{}".format(j * 2)
-            regmap[xmm_name][0][64] = xmm_name
-            regindex[xmm_name] = (xmm_name, 0, 64)
+    xmm_name = "xmm{}".format(j * 2)
+    regmap[xmm_name][0][64] = xmm_name
+    regindex[xmm_name] = (xmm_name, 0, 64)
 
-            xmm_name = "xmm{}".format(j * 2 + 1)
-            regmap[xmm_name][0][64] = xmm_name
-            regindex[xmm_name] = (xmm_name, 0, 64)
+    xmm_name = "xmm{}".format(j * 2 + 1)
+    regmap[xmm_name][0][64] = xmm_name
+    regindex[xmm_name] = (xmm_name, 0, 64)
 
+print(regindex)
 
 def _get_subreg32(regname):
     return regmap[regname][0][32]
