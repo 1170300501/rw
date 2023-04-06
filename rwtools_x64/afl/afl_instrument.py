@@ -251,7 +251,7 @@ class AFL_Instrument:
             # print(taint_regs[l_idx])
 
             for idx, instruction in enumerate(fn.cache[l_idx:r_idx]):
-                # print(idx + l_idx, instruction)
+                print(idx + l_idx, instruction)
                 ops = handle_get_operands(instruction.op_str)
                 taint_flag = False
 
