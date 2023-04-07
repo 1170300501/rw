@@ -363,21 +363,16 @@ class AFL_Instrument:
         stack.appendleft(block_bits)
 
         while len(stack) > 0:
-            block_bits = stack[0]
+            block_bits = stack.popleft()
             visited_blocks.add(block_bits)
             
-            not_pop_flag = False
             if len(self.blocks_children[block_bits]) != 0:
                 blocks_children_list = list(self.blocks_children[block_bits])
                 for child in blocks_children_list:
                     if child not in visited_blocks:
-                        not_pop_flag = True
                         stack.appendleft(child)
                     else:
                         self.blocks_children[block_bits].remove(child)
-
-            if not not_pop_flag:
-                stack.popleft()
 
 
         # visited_blocks.add(block_bits)
@@ -467,6 +462,7 @@ class AFL_Instrument:
         self.dump_taint_counts()
         self.dump_blocks_children()
         self.add_afl_text_instrumentation()
+        print("afl instrumentation is finished.")
 
     # def do_instrument(self):
     #     for addr, fn in self.rewriter.container.functions.items():
