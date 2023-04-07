@@ -1,7 +1,7 @@
 import random as r
 import copy
 import time
-import os
+from collections import deque
 
 from librw_x64.container import Function, InstrumentedInstruction
 from rwtools_x64.utils import *
@@ -357,16 +357,38 @@ class AFL_Instrument:
 
     def dfs(self, block_bits, visited_blocks):
         # 通过dfs删除多余的边
-        visited_blocks.add(block_bits)
-        if len(self.blocks_children[block_bits]) != 0:
-            blocks_children_list = list(self.blocks_children[block_bits])
-            for child in blocks_children_list:
-                if child not in visited_blocks:
-                    self.dfs(child, visited_blocks)
-                else:
-                    self.blocks_children[block_bits].remove(child)
+        stack = deque()
+        visited_blocks = set()
+        stack.appendleft(block_bits)
 
-            self.blocks_children[block_bits] = set(blocks_children_list)
+        while len(stack) > 0:
+            block_bits = stack[0]
+            visited_blocks.add(block_bits)
+            
+            not_pop_flag = False
+            if len(self.blocks_children[block_bits]) != 0:
+                blocks_children_list = list(self.blocks_children[block_bits])
+                for child in blocks_children_list:
+                    if child not in visited_blocks:
+                        not_pop_flag = True
+                        stack.appendleft(child)
+                    else:
+                        self.blocks_children[block_bits].remove(child)
+
+            if not not_pop_flag:
+                stack.popleft()
+
+
+        # visited_blocks.add(block_bits)
+        # if len(self.blocks_children[block_bits]) != 0:
+        #     blocks_children_list = list(self.blocks_children[block_bits])
+        #     for child in blocks_children_list:
+        #         if child not in visited_blocks:
+        #             self.dfs(child, visited_blocks)
+        #         else:
+        #             self.blocks_children[block_bits].remove(child)
+
+        #     self.blocks_children[block_bits] = set(blocks_children_list)
 
     def dump_taint_counts(self):
         write_ptrs = list()
