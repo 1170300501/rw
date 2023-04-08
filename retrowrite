@@ -159,6 +159,13 @@ def afl(rw, loader, args):
     instrumenter.do_instrument()
 
 
+def taint(rw, loader, args):
+    analyze_registers(loader, args)
+
+    analyser = Taint_Analyser(rw)
+    analyser.do_analysis()
+
+
 if __name__ == "__main__":
     argp = argparse.ArgumentParser(description='')
 
@@ -178,6 +185,8 @@ if __name__ == "__main__":
                       help="Add symbolization instrumentation")
 
     argp.add_argument("-f", "--afl", action='store_true', help="Add afl instrumentation")
+    
+    argp.add_argument("-t", "--taint", action='store_true', help="Taint Analysis")
 
     # argp.add_argument("-s", "--assembly", action="store_true",
                       # help="Generate Symbolized Assembly")
@@ -246,6 +255,7 @@ if __name__ == "__main__":
             from librw_x64.analysis import register
             from rwtools_x64.afl.afl_instrument import AFL_Instrument
             from rwtools_x64.symbolize.sym_instrument import Sym_Instrument
+            from rwtools_x64.analyse_tk import Taint_Analyser
     else:
         print(f"Architecture {arch} not supported!")
         exit(1)
@@ -330,6 +340,9 @@ if __name__ == "__main__":
         rw.dump()
     elif args.afl:
         afl(rw, loader, args)
+        rw.dump()
+    elif args.taint:
+        taint(rw, loader, args)
         rw.dump()
     else:
         rw.dump()
