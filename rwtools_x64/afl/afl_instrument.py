@@ -356,20 +356,21 @@ class AFL_Instrument:
 
                     break
 
-    def dfs(self, block_bits, visited_blocks):
+    def dfs(self, block_bits):
         # 通过dfs删除多余的边
         stack = deque()
         visited_blocks = set()
+        visited_blocks.add(block_bits)
         stack.appendleft(block_bits)
 
         while len(stack) > 0:
             block_bits = stack.popleft()
-            visited_blocks.add(block_bits)
             
-            if len(self.blocks_children[block_bits]) != 0:
+            if len(self.blocks_children[block_bits]) > 0:
                 blocks_children_list = list(self.blocks_children[block_bits])
                 for child in blocks_children_list:
                     if child not in visited_blocks:
+                        visited_blocks.add(child)
                         stack.appendleft(child)
                     else:
                         self.blocks_children[block_bits].remove(child)
@@ -458,7 +459,7 @@ class AFL_Instrument:
             call_graph.pop(addr_to_handle)
             visited_functions.add(addr_to_handle)
 
-        self.dfs(start_bits, set())
+        self.dfs(start_bits)
         self.dump_taint_counts()
         self.dump_blocks_children()
         self.add_afl_text_instrumentation()
