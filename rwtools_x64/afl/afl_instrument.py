@@ -401,7 +401,8 @@ class AFL_Instrument:
     def dump_blocks_children(self):
         write_ptrs = list()
         for bits, block_children in self.blocks_children.items():
-            write_ptrs.append(str(bits) + " " + " ".join([str(c) for c in block_children]))
+            children_str = " " + " ".join([str(c) for c in block_children]) if len(block_children) > 0 else ""
+            write_ptrs.append(str(bits) + children_str)
 
         with open("blocks_children", "w") as f:
             f.write("\n".join(write_ptrs))
