@@ -84,7 +84,6 @@ if __name__ == '__main__':
 
             new_edges = list()
             for edge in edges:
-                print(nodes_map[edge[0]], nodes_map[edge[1]], (nodes_map[edge[0]] >> 1) ^ nodes_map[edge[1]])
                 if str((nodes_map[edge[0]] >> 1) ^ nodes_map[edge[1]]) in covered_tuples:
                     continue
 
