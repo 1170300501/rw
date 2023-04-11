@@ -17,6 +17,7 @@ t = time.time()
 r.seed(int(t) ^ int(round((t - int(t)) * 1000000)) ^ os.getpid())
 
 MAP_SIZE = 2 ** 16
+MAX_CHANGE_NUM = 5
 
 AFL_MAYBE_LOG_LOC = 0x1100000000000000
 AFL_STORE_LOC = 0x1200000000000000
@@ -175,6 +176,7 @@ class AFL_Instrument:
 
         bb_queue = [bb_intervals[start_idx]]
         changed = dict()
+        change_times = dict()
         visited_intervals = set()
 
         use_not_define_regs = get_use_not_define_regs(fn, bb_intervals.values())
@@ -230,7 +232,7 @@ class AFL_Instrument:
             l_idx, r_idx = bb_interval
             # print(fn.cache[l_idx])
 
-            if bb_interval in visited_intervals and not changed[l_idx]:
+            if bb_interval in visited_intervals and (not changed[l_idx] or change_times[l_idx] >= MAX_CHANGE_NUM):
                 continue
 
             visited_intervals.add(bb_interval)
@@ -332,6 +334,8 @@ class AFL_Instrument:
                 taint_regs[r_idx] = list(set(taint_regs[r_idx]))
 
                 changed[r_idx] = len(set(taint_regs[r_idx]) - set(tmp_taint_regs)) != 0
+                if changed[r_idx]:
+                    change_times[r_idx] = change_times[r_idx] + 1 if r_idx in change_times.keys() else 1
                 bb_queue.append(bb_intervals[r_idx])
 
                 self.blocks_children[block_bits].add(basic_blocks_bits[r_idx])
@@ -347,6 +351,8 @@ class AFL_Instrument:
                     taint_regs[j_idx] = list(set(taint_regs[j_idx]))
 
                     changed[j_idx] = len(set(taint_regs[j_idx]) - set(tmp_taint_regs)) != 0
+                    if changed[j_idx]:
+                        change_times[j_idx] = change_times[j_idx] + 1 if j_idx in change_times.keys() else 1
                     bb_queue.append(bb_intervals[j_idx])
 
                     self.blocks_children[block_bits].add(basic_blocks_bits[j_idx])
