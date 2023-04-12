@@ -85,8 +85,11 @@ class Sym_Instrument:
 
             elif instruction.mnemonic.startswith("subq") and "%rsp" in instruction.op_str[-4:]:
                 # has_rsp_expand = True
-                sz_str = instruction.op_str[1:instruction.op_str.find(",")]
-                sub_size += int(sz_str, 16) if instruction.op_str[1:3] == "0x" else int(sz_str)
+                sz_str = handle_get_operands(instruction.op_str)[0][1:]
+                if sz_str[0] == "-":
+                    sub_size += int(sz_str[1:], 16) if sz_str[1:3] == "0x" else int(sz_str)
+                else:
+                    sub_size += int(sz_str, 16) if sz_str[0:2] == "0x" else int(sz_str)
 
         if max_stack_loc % 8 != 0:  # 8字节对齐
             max_stack_loc += max_stack_loc % 8
