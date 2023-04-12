@@ -1,6 +1,7 @@
 *.swp
 *.pyc
 venv/
+.idea/
 testbins/build/
 retrowrite.wiki/
 __pycache__/
