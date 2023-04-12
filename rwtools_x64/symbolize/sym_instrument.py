@@ -924,8 +924,12 @@ class Sym_Instrument:
         c_idx = idx
         for _ in range(10):
             c_idx -= 1
-            if c_idx < 0 or not self.not_cond_inst(fn.cache[c_idx].mnemonic):
+            c_inst = fn.cache[c_idx]
+            if c_idx < 0 or not self.not_cond_inst(c_inst.mnemonic):
                 break
+            
+            if "xmm" in c_inst.op_str or "st" in c_inst.op_str:
+                return -1, False
 
         # 暂时只考虑整型比较
         cond_instruction = fn.cache[c_idx]
