@@ -304,7 +304,7 @@ def get_use_not_define_regs(fn, bb_intervals):
 
                     break
 
-                elif is_assgin(instruction.mnemonic) and has_reg(instruction.op_str, r) != "" is not None:
+                elif is_assgin(instruction.mnemonic) and has_reg(instruction.op_str, r) != "":
                     if has_reg(ops[0], r) != "":
                         use_not_define_regs[l_idx].append(r)
 
