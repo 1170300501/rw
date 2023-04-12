@@ -306,13 +306,8 @@ if __name__ == "__main__":
 
     loader.container.attach_loader(loader)
 
-    if os.path.exists(args.bin + "rw.pkl"):
-        rw = pickle.load(open(args.bin + "rw.pkl", "rb"))
-    else:
-        rw = Rewriter(loader.container, args.outfile)
-        rw.symbolize()
-
-        pickle.dump(rw, open(args.bin + "rw.pkl", "wb"))
+    rw = Rewriter(loader.container, args.outfile)
+    rw.symbolize()
 
 
     if args.asan:
