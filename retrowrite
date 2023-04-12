@@ -261,56 +261,50 @@ if __name__ == "__main__":
         exit(1)
 
     if args.module and args.module != "counter": Rewriter.detailed_disasm = True
+   
+    loader = Loader(args.bin)
 
-    if os.path.exists(args.bin + "loader.pkl"):
-        loader = pickle.load(open(args.bin + "loader.pkl", "rb"))
-    
-    else:    
-        loader = Loader(args.bin)
-
-        # x64 supports only PIE binaries with symbols (for now)
-        if arch == "x64" and loader.is_pie() == False and args.ignore_no_pie == False:
-            print("***** RetroWrite requires a position-independent executable. *****")
-            print("It looks like %s is not position independent" % args.bin)
-            print("If you really want to continue, because you think retrowrite has made a mistake, pass --ignore-no-pie.")
-            sys.exit(1)
-        if arch == "x64" and loader.is_stripped() == True and args.ignore_stripped == False:
-            print("The x64 version of RetroWrite requires a non-stripped executable.")
-            print("It looks like %s is stripped" % args.bin)
-            print("If you really want to continue, because you think retrowrite has made a mistake, pass --ignore-stripped.")
-            sys.exit(1)
+    # x64 supports only PIE binaries with symbols (for now)
+    if arch == "x64" and loader.is_pie() == False and args.ignore_no_pie == False:
+        print("***** RetroWrite requires a position-independent executable. *****")
+        print("It looks like %s is not position independent" % args.bin)
+        print("If you really want to continue, because you think retrowrite has made a mistake, pass --ignore-no-pie.")
+        sys.exit(1)
+    if arch == "x64" and loader.is_stripped() == True and args.ignore_stripped == False:
+        print("The x64 version of RetroWrite requires a non-stripped executable.")
+        print("It looks like %s is stripped" % args.bin)
+        print("If you really want to continue, because you think retrowrite has made a mistake, pass --ignore-stripped.")
+        sys.exit(1)
 
 
-        slist = loader.slist_from_symtab()
+    slist = loader.slist_from_symtab()
 
-        # this if is due to small architectural implementation differences. Hopefully in the future it will be unified.
-        if arch == "x64":
-            loader.identify_imports()
-            flist = loader.flist_from_symtab() # before loading data sections
-            loader.load_functions(flist)
-            if args.kernel:
-                loader.load_data_sections(slist, krw.is_data_section)
-            else:
-                loader.load_data_sections(slist, lambda x: x in Rewriter.DATASECTIONS)
+    # this if is due to small architectural implementation differences. Hopefully in the future it will be unified.
+    if arch == "x64":
+        loader.identify_imports()
+        flist = loader.flist_from_symtab() # before loading data sections
+        loader.load_functions(flist)
+        if args.kernel:
+            loader.load_data_sections(slist, krw.is_data_section)
         else:
+            loader.load_data_sections(slist, lambda x: x in Rewriter.DATASECTIONS)
+    else:
 
-            if not ".gcc_except_table" in slist:
-                Rewriter.emulate_calls = False
+        if not ".gcc_except_table" in slist:
+            Rewriter.emulate_calls = False
 
-            loader.load_sections(slist, lambda x: x not in Rewriter.IGNORE_SECTIONS)
-            flist = loader.flist_from_symtab() # after loading all sections
-            loader.load_functions(flist)
+        loader.load_sections(slist, lambda x: x not in Rewriter.IGNORE_SECTIONS)
+        flist = loader.flist_from_symtab() # after loading all sections
+        loader.load_functions(flist)
 
 
-        reloc_list = loader.reloc_list_from_symtab()
-        loader.load_relocations(reloc_list)
+    reloc_list = loader.reloc_list_from_symtab()
+    loader.load_relocations(reloc_list)
 
-        global_list = loader.global_data_list_from_symtab()
-        loader.load_globals_from_glist(global_list)
+    global_list = loader.global_data_list_from_symtab()
+    loader.load_globals_from_glist(global_list)
 
-        loader.container.attach_loader(loader)
-        
-        pickle.dump(loader, open(args.bin + "loader.pkl", "wb"))
+    loader.container.attach_loader(loader)
 
     if os.path.exists(args.bin + "rw.pkl"):
         rw = pickle.load(open(args.bin + "rw.pkl", "rb"))
