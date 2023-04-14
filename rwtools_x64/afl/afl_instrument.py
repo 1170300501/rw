@@ -57,7 +57,7 @@ class AFL_Instrument:
             return
 
         for idx in pre_idxs_bb:
-            bb_bits = r.randint(1, MAP_SIZE)
+            bb_bits = r.randint(0, MAP_SIZE-1)
             basic_blocks_bits[idx] = bb_bits
             #print(idx, bb_bits)
 
