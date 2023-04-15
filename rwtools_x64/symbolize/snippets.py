@@ -66,6 +66,7 @@ SYM_NOTIFY = [
 ]
 
 SYM_WRITE_MEMORY = [
+    "\tmovq $0, {write_addr}",
     "\tmovq {write_data}, %rdx",
     "\tlea {write_addr}, %rdi",
     "\tmovl ${size}, %esi",

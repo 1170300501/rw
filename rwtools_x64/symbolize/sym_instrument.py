@@ -43,6 +43,7 @@ class Sym_Instrument:
         self.rewriter = rewriter
 
         self.instrument_orders = dict()  # 存放各条指令插入情况，用于标号生成
+        self.exp_to_ext_bits = dict()    # 等待扩展的表达式
 
     def get_store_addr(self, block=8, origin_sz=None):
         if origin_sz is None:
@@ -378,7 +379,11 @@ class Sym_Instrument:
                     value = op
                     exp_type = "op_exp"
 
-                    if args["func"] != "sext":
+                    if exp in self.exp_to_ext_bits.keys():
+                        args["func"] = "sext"
+                        args["sz"] -= self.exp_to_ext_bits[exp]
+
+                    elif args["func"] != "sext":
                         # 不存在movzlq指令，movl即可将高位置0
                         args["mne_bit"] = "z{}q".format(bits_mne_map[v_sz]) if v_sz < 32 else bits_mne_map[v_sz]
                         args["prefer_di"] = args["prefer_di"] if v_sz < 32 else regmap["rdi"][0][v_sz]
@@ -399,6 +404,10 @@ class Sym_Instrument:
             exp = memory_exp_addrs[op]
             value = exp
             exp_type = "m_exp"
+
+            if exp in self.exp_to_ext_bits.keys():
+                args["func"] = "sext"
+                args["sz"] -= self.exp_to_ext_bits[exp]
 
         elif op_type == "m":  # 内存操作，但没有表达式
             if args["func"] != "sext":
@@ -1019,6 +1028,7 @@ class Sym_Instrument:
         local_instrumentation = list()
         instruction = fn.cache[idx]
         op_reverse = False
+        bits_to_ext = False
 
         # 获取运算
         if instruction.mnemonic.startswith("add"):
@@ -1039,8 +1049,10 @@ class Sym_Instrument:
             op_label = "shift_left"
         elif instruction.mnemonic.startswith("shr"):
             op_label = "logical_shift_right"
+            bits_to_ext = True
         elif instruction.mnemonic.startswith("sar"):
             op_label = "arithmetic_shift_right"
+            bits_to_ext = True
 
         elif instruction.mnemonic.startswith("xor"):
             op_label = "xor"
@@ -1169,6 +1181,10 @@ class Sym_Instrument:
             res=res_addr
         ))
 
+        if bits_to_ext:
+            self.exp_to_ext_bits[res_addr] = sz - int(operands[0][1:], 16) \
+                if "0x" in operands[0] else int(operands[0][1:])
+
         if i_idx1 != -1:
             enter1 = enter2 if enter1 is None else enter1
             instruction.before[i_idx1] = instruction.before[i_idx1].replace("@@", enter1.split(":")[0])
@@ -1201,6 +1217,7 @@ class Sym_Instrument:
 
     def add_symbolic_instrumentation(self):
         for addr, fn in self.rewriter.container.functions.items():
+            self.exp_to_ext_bits.clear()
             self.use_rbp = 0
             jmp_labels = dict()
             idx_pc_exp_map = dict()
