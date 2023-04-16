@@ -380,7 +380,7 @@ class Sym_Instrument:
                     value = op
                     exp_type = "op_exp"
 
-                    if self.exp_bits[exp] != sz:
+                    if exp in self.exp_bits.keys() and self.exp_bits[exp] != sz:
                         if self.exp_bits[exp] < sz:
                             args["func"] = "sext"
                             args["sz"] = sz - self.exp_bits[exp]
