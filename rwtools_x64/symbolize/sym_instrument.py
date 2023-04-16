@@ -43,7 +43,7 @@ class Sym_Instrument:
         self.rewriter = rewriter
 
         self.instrument_orders = dict()  # 存放各条指令插入情况，用于标号生成
-        self.exp_to_ext_bits = dict()    # 等待扩展的表达式
+        self.exp_bits = dict()           # 表达式的size
 
     def get_store_addr(self, block=8, origin_sz=None):
         if origin_sz is None:
@@ -357,6 +357,7 @@ class Sym_Instrument:
         instruction = fn.cache[idx]
         op_type = get_op_type(op)
         exp_type = ""
+        need_dim = False
 
         exp = "$0x0"
         value = op
@@ -379,9 +380,12 @@ class Sym_Instrument:
                     value = op
                     exp_type = "op_exp"
 
-                    if exp in self.exp_to_ext_bits.keys():
-                        args["func"] = "sext"
-                        args["sz"] -= self.exp_to_ext_bits[exp]
+                    if self.exp_bits[exp] != sz:
+                        if self.exp_bits[exp] < sz:
+                            args["func"] = "sext"
+                            args["sz"] = sz - self.exp_bits[exp]
+                        else:
+                            need_dim = True
 
                     elif args["func"] != "sext":
                         # 不存在movzlq指令，movl即可将高位置0
@@ -405,9 +409,12 @@ class Sym_Instrument:
             value = exp
             exp_type = "m_exp"
 
-            if exp in self.exp_to_ext_bits.keys():
-                args["func"] = "sext"
-                args["sz"] -= self.exp_to_ext_bits[exp]
+            if self.exp_bits[exp] != sz:
+                if self.exp_bits[exp] < sz:
+                    args["func"] = "sext"
+                    args["sz"] = sz - self.exp_bits[exp]
+                else:
+                    need_dim = True
 
         elif op_type == "m":  # 内存操作，但没有表达式
             if args["func"] != "sext":
@@ -479,7 +486,7 @@ class Sym_Instrument:
         insert_jmp_enter_idx = -1
         if op_type != "n" and exp_type != "":
             if is_cmp:  # 比较
-                if args["func"] == "sext":
+                if args["func"] == "sext" or need_dim:
                     ret_addr = self.get_store_addr()
                     et = handle_is_null()
                     handle_operand(exp)
@@ -1028,7 +1035,6 @@ class Sym_Instrument:
         local_instrumentation = list()
         instruction = fn.cache[idx]
         op_reverse = False
-        bits_to_ext = False
 
         # 获取运算
         if instruction.mnemonic.startswith("add"):
@@ -1049,10 +1055,8 @@ class Sym_Instrument:
             op_label = "shift_left"
         elif instruction.mnemonic.startswith("shr"):
             op_label = "logical_shift_right"
-            bits_to_ext = True
         elif instruction.mnemonic.startswith("sar"):
             op_label = "arithmetic_shift_right"
-            bits_to_ext = True
 
         elif instruction.mnemonic.startswith("xor"):
             op_label = "xor"
@@ -1181,9 +1185,7 @@ class Sym_Instrument:
             res=res_addr
         ))
 
-        if bits_to_ext:
-            self.exp_to_ext_bits[res_addr] = sz - int(operands[0][1:], 16) \
-                if "0x" in operands[0] else int(operands[0][1:])
+        self.exp_bits[res_addr] = sz
 
         if i_idx1 != -1:
             enter1 = enter2 if enter1 is None else enter1
@@ -1217,7 +1219,7 @@ class Sym_Instrument:
 
     def add_symbolic_instrumentation(self):
         for addr, fn in self.rewriter.container.functions.items():
-            self.exp_to_ext_bits.clear()
+            self.exp_bits.clear()
             self.use_rbp = 0
             jmp_labels = dict()
             idx_pc_exp_map = dict()
