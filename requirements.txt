@@ -3,4 +3,3 @@ pyelftools
 capstone>=4.0.2
 intervaltree
 networkx
-pickle

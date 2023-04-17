@@ -5,9 +5,10 @@ from . import snippets as sp
 intercepted_functions = ["malloc", "calloc", "mmap", "mmap64", "open", "read", "lseek",
                          "lseek64", "fopen", "fopen64", "fread", "fseek", "fseeko", "rewind",
                          "fseeko64", "getc", "ungetc", "memcpy", "memset", "strncpy", "strchr",
-                         "memcmp", "memmove", "ntohl", "fgets", "fgetc", "getchar"]
+                         "memcmp", "memmove", "ntohl", "fgets", "fgetc", "getchar",
+                         "fread_unlocked", "fetc_unlocked", "fgets_unlocked"]
 
-my_functions = ["strcmp", ]
+my_functions = {"strcmp": 2, "strncmp": 3}
 
 j_mne_antonym = {
     "jz": "jnz", "jc": "jnc", "jo": "jno", "js": "jns", "jp": "jnp",  # 标志位
