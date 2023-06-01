@@ -241,6 +241,9 @@ class Function():
             for iinstr in instruction.before:
                 results.append("{}".format(iinstr))
 
+            for iinstr in instruction.copy:
+                results.append("{}".format(iinstr))
+
             if instruction.mnemonic.startswith("ret"):
                 results.append(ret_prepend)
             results.append(
@@ -308,6 +311,9 @@ class InstructionWrapper():
         self.rbp_start = list()
         self.rbp_end = list()
 
+        # 记录跳转表达式
+        self.copy = list()
+
         # 记录是否替换rbp
         self.rbp_replace = False
         self.rbp_reg = None
@@ -358,6 +364,12 @@ class InstructionWrapper():
             self.rbp_end.insert(order, iinstr)
         else:
             self.rbp_end.append(iinstr)
+
+    def instrument_copy(self, iinstr, order=None):
+        if order is not None:
+            self.copy.insert(order, iinstr)
+        else:
+            self.copy.append(iinstr)
 
 
 class InstrumentedInstruction():

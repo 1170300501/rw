@@ -560,7 +560,7 @@ class Sym_Instrument:
 
                     transfer_instrumentation = list()
                     self.combine_instrumentation(last_idx, fn, transfer_instrumentation, sp.TRANSFER_MEMORY)
-                    last_instruction.instrument_before("\n".join(transfer_instrumentation).format(
+                    last_instruction.instrument_copy("\n".join(transfer_instrumentation).format(
                         exp_addr=reg_exp_addrs[to_use_reg],
                         transfer_addr=transfer_addr
                     ))
