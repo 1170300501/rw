@@ -1,3 +1,7 @@
+import sys
+
+little = "1" if sys.byteorder == "little" else "0"
+
 SYM_INIT_FN = "__sym_ctor"
 
 SYM_LIB_INIT = "_sym_initialize"
@@ -70,7 +74,7 @@ SYM_WRITE_MEMORY = [
     "\tmovq {write_data}, %rdx",
     "\tlea {write_addr}, %rdi",
     "\tmovl ${size}, %esi",
-    "\tmovl $0x1, %ecx",
+    "\tmovl ${}, %ecx".format(little),
     "\tcall _sym_write_memory@PLT",
     # "\tmovq {value_addr}, %rax",
     # "\tmovq %rax, {write_addr}"
@@ -79,7 +83,7 @@ SYM_WRITE_MEMORY = [
 SYM_READ_MEMORY = [
     "\tmovq {read_addr}, %rdi",
     "\tmovl ${size}, %esi",
-    "\tmovl $0x1, %edx",
+    "\tmovl ${}, %edx".format(little),
     "\tcall _sym_read_memory@PLT",
     "\tmovq %rax, {read_res}"
 ]
@@ -167,10 +171,6 @@ SYM_BUILD_INT128 = [
     "\tmovq {low_addr}, %rsi",
     "\tcall _sym_build_integer128@PLT",
     "\tmovq %rax, {int_res}"
-]
-
-SYM_BUILD_INT_TO_FLOAT = [
-    
 ]
 
 TRANSFER_MEMORY = [
