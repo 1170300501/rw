@@ -8,7 +8,6 @@ intercepted_functions = ["malloc", "calloc", "mmap", "mmap64", "open", "read", "
                          "memcmp", "memmove", "ntohl", "fgets", "fgetc", "getchar",
                          "fread_unlocked", "fetc_unlocked", "fgets_unlocked"]
 
-my_functions = {"strcmp": 2, "strncmp": 3}
 
 j_mne_antonym = {
     "jz": "jnz", "jc": "jnc", "jo": "jno", "js": "jns", "jp": "jnp",  # 标志位
@@ -44,7 +43,6 @@ class Sym_Instrument:
         self.rewriter = rewriter
 
         self.instrument_orders = dict()  # 存放各条指令插入情况，用于标号生成
-        self.exp_bits = dict()           # 表达式的size
 
     def get_store_addr(self, block=8, origin_sz=None):
         if origin_sz is None:
@@ -358,7 +356,6 @@ class Sym_Instrument:
         instruction = fn.cache[idx]
         op_type = get_op_type(op)
         exp_type = ""
-        need_dim = False
 
         exp = "$0x0"
         value = op
@@ -381,14 +378,7 @@ class Sym_Instrument:
                     value = op
                     exp_type = "op_exp"
 
-                    if exp in self.exp_bits.keys() and self.exp_bits[exp] != sz:
-                        if self.exp_bits[exp] < sz:
-                            args["func"] = "sext"
-                            args["sz"] = sz - self.exp_bits[exp]
-                        else:
-                            need_dim = True
-
-                    elif args["func"] != "sext":
+                    if args["func"] != "sext":
                         # 不存在movzlq指令，movl即可将高位置0
                         args["mne_bit"] = "z{}q".format(bits_mne_map[v_sz]) if v_sz < 32 else bits_mne_map[v_sz]
                         args["prefer_di"] = args["prefer_di"] if v_sz < 32 else regmap["rdi"][0][v_sz]
@@ -410,16 +400,10 @@ class Sym_Instrument:
             value = exp
             exp_type = "m_exp"
 
-            if self.exp_bits[exp] != sz:
-                if self.exp_bits[exp] < sz:
-                    args["func"] = "sext"
-                    args["sz"] = sz - self.exp_bits[exp]
-                else:
-                    need_dim = True
-
         elif op_type == "m":  # 内存操作，但没有表达式
             if args["func"] != "sext":
-                args["mne_bit"] = "z{}q".format(bits_mne_map[args["sz"]]) if args["sz"] < 32 else bits_mne_map[args["sz"]]
+                args["mne_bit"] = "z{}q".format(bits_mne_map[args["sz"]]) if args["sz"] < 32 else bits_mne_map[
+                    args["sz"]]
                 args["prefer_di"] = args["prefer_di"] if args["sz"] < 32 else regmap["rdi"][0][args["sz"]]
 
         # 操作数构建：
@@ -487,7 +471,7 @@ class Sym_Instrument:
         insert_jmp_enter_idx = -1
         if op_type != "n" and exp_type != "":
             if is_cmp:  # 比较
-                if args["func"] == "sext" or need_dim:
+                if args["func"] == "sext":
                     ret_addr = self.get_store_addr()
                     et = handle_is_null()
                     handle_operand(exp)
@@ -599,7 +583,7 @@ class Sym_Instrument:
             op2_reg = regindex[operands[1][1:]][0]
 
             # 当两个寄存器相同，无需删除
-            if not(op1_type == "r" and not has_segment_reg(operands[0]) and regindex[operands[0][1:]][0] == op2_reg):
+            if not (op1_type == "r" and not has_segment_reg(operands[0]) and regindex[operands[0][1:]][0] == op2_reg):
                 if op2_reg in reg_read_addrs.keys():
                     reg_read_addrs.pop(op2_reg)
 
@@ -733,7 +717,7 @@ class Sym_Instrument:
         for p_reg in param_regs:
             p_reg = p_reg if len(p_reg) < 3 else p_reg[1:]
 
-            for t_idx, target_instruction in enumerate(fn.cache[idx - 1:max(idx - 20, l_idx-1):-1]):
+            for t_idx, target_instruction in enumerate(fn.cache[idx - 1:max(idx - 20, l_idx - 1):-1]):
                 if target_instruction.mnemonic.startswith("call") or target_instruction.mnemonic.startswith("jmp"):
                     # 只在本函数范围内，且没有无条件跳转
                     break
@@ -944,7 +928,7 @@ class Sym_Instrument:
             c_inst = fn.cache[c_idx]
             if c_idx < 0 or not self.not_cond_inst(c_inst.mnemonic):
                 break
-            
+
             if "xmm" in c_inst.op_str or "st" in c_inst.op_str:
                 return -1, False
 
@@ -1186,8 +1170,6 @@ class Sym_Instrument:
             res=res_addr
         ))
 
-        self.exp_bits[res_addr] = sz
-
         if i_idx1 != -1:
             enter1 = enter2 if enter1 is None else enter1
             instruction.before[i_idx1] = instruction.before[i_idx1].replace("@@", enter1.split(":")[0])
@@ -1220,7 +1202,6 @@ class Sym_Instrument:
 
     def add_symbolic_instrumentation(self):
         for addr, fn in self.rewriter.container.functions.items():
-            self.exp_bits.clear()
             self.use_rbp = 0
             jmp_labels = dict()
             idx_pc_exp_map = dict()
@@ -1314,7 +1295,8 @@ class Sym_Instrument:
                                     or instruction.mnemonic.startswith("addq") and "%rsp" in instruction.op_str[-4:]:
 
                                 if l_idx == end_interval[0] \
-                                        or end_interval[0] in jmp_from_idxs.keys() and r_idx - 1 in jmp_from_idxs[end_interval[0]] \
+                                        or end_interval[0] in jmp_from_idxs.keys() and r_idx - 1 in jmp_from_idxs[
+                                    end_interval[0]] \
                                         or r_idx == end_interval[0] and not is_only_jmp(fn.cache[r_idx - 1].mnemonic):
                                     # 在结束部分之前
                                     if one_end or not one_end \
@@ -1365,7 +1347,8 @@ class Sym_Instrument:
                                 if not instruction.rbp_replace:
                                     instruction.instrument_rbp_start(
                                         "\tpushq %{0}\n\tmovq -0x8(%rbp), %{0}".format(rbp_reg))
-                                    instruction.instrument_rbp_end("\tmovq %{0}, -0x8(%rbp)\n\tpopq %{0}".format(rbp_reg))
+                                    instruction.instrument_rbp_end(
+                                        "\tmovq %{0}, -0x8(%rbp)\n\tpopq %{0}".format(rbp_reg))
                                     instruction.rbp_replace = True
                             elif "(%rsp)" in operand:  # 涉及以栈顶访问，此时由于进行了push操作，需要修改访问位置
                                 loc_str = operand[:operand.find("(%rsp)")]
@@ -1376,7 +1359,8 @@ class Sym_Instrument:
                         self.handle_assignment(this_idx, fn, memory_exp_addrs, reg_read_addrs, reg_exp_addrs)
 
                     elif is_call(instruction.mnemonic):  # 函数调用
-                        self.handle_call(this_idx, bb_interval, fn, memory_exp_addrs, reg_exp_addrs, to_use_regs_exp_addr, jmp_from_idxs)
+                        self.handle_call(this_idx, bb_interval, fn, memory_exp_addrs, reg_exp_addrs,
+                                         to_use_regs_exp_addr, jmp_from_idxs)
 
                     elif is_jmp(instruction.mnemonic):  # 跳转指令
                         c_idx, is_remove = self.handle_comparison(this_idx, fn, memory_exp_addrs, reg_read_addrs,
@@ -1410,10 +1394,10 @@ class Sym_Instrument:
                 if r_idx > 0:
                     end_instruction = fn.cache[r_idx - 1]
                     if has_retq and is_only_jmp(end_instruction.mnemonic) \
-                        and (".L" not in end_instruction.op_str
-                             or ".L" in end_instruction.op_str
-                             and (int(end_instruction.op_str[2:], 16) < addr
-                                  or int(end_instruction.op_str[2:], 16) > fn.cache[-1].address)):
+                            and (".L" not in end_instruction.op_str
+                                 or ".L" in end_instruction.op_str
+                                 and (int(end_instruction.op_str[2:], 16) < addr
+                                      or int(end_instruction.op_str[2:], 16) > fn.cache[-1].address)):
                         # 当存在ret指令，但同时存在跳转到其他函数的指令时，在跳转前需恢复栈，因为跳转不会再返回
                         idxs_end.add(r_idx - 1)
 
