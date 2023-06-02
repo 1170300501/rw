@@ -1205,6 +1205,9 @@ class Sym_Instrument:
         if res_op[1:] in reg_read_addrs.keys():
             reg_read_addrs.pop(res_op[1:])
 
+        if instruction.mnemonic.startswith("test"):
+            instruction.param_addrs[operands[-1]] = res_addr
+
         return True
 
     def add_symbolic_instrumentation(self):
