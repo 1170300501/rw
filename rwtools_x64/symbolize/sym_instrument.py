@@ -549,7 +549,7 @@ class Sym_Instrument:
             if r_idx - 1 in jmp_froms:
                 jmp_to_idx = idx
 
-        def transfer(last_idx, to_idx):
+        def transfer(last_idx, to_idx, is_jmp):
             if to_idx == len(fn.cache):
                 return
 
@@ -560,18 +560,25 @@ class Sym_Instrument:
 
                     transfer_instrumentation = list()
                     self.combine_instrumentation(last_idx, fn, transfer_instrumentation, sp.TRANSFER_MEMORY)
-                    last_instruction.instrument_copy("\n".join(transfer_instrumentation).format(
-                        exp_addr=reg_exp_addrs[to_use_reg],
-                        transfer_addr=transfer_addr
-                    ))
+
+                    if is_jmp:
+                        last_instruction.instrument_copy("\n".join(transfer_instrumentation).format(
+                            exp_addr=reg_exp_addrs[to_use_reg],
+                            transfer_addr=transfer_addr
+                        ))
+                    else:
+                        last_instruction.instrument_after("\n".join(transfer_instrumentation).format(
+                            exp_addr=reg_exp_addrs[to_use_reg],
+                            transfer_addr=transfer_addr
+                        ))
 
         # 存档跳转后将被使用的表达式
         if jmp_to_idx is not None:
-            transfer(r_idx - 1, jmp_to_idx)
+            transfer(r_idx - 1, jmp_to_idx, True)
 
         # 存档顺序执行将被使用的表达式
         if not is_only_jmp(fn.cache[r_idx - 1].mnemonic):
-            transfer(r_idx - 1, r_idx)
+            transfer(r_idx - 1, r_idx, jmp_to_idx is not None)
 
     def handle_assignment(self, idx, fn, memory_exp_addrs, reg_read_addrs, reg_exp_addrs):
         local_instrumentation = list()
